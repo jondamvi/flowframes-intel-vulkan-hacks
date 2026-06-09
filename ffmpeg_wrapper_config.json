@@ -1,0 +1,8 @@
+{
+  "OverrideH265EncodingEnable": "True",
+  "OverrideH265EncodingSettings": {
+    "OverrideEncodingArgs": "-c:v hevc_qsv -global_quality 17 -preset slow -async_depth 8 -g 60 -keyint_min 1 -forced_idr 1 -movflags +faststart",
+    "LogEnable": "True",
+    "DebugLogEnable": "False"
+  }
+}

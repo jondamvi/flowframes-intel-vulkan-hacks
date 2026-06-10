@@ -115,6 +115,20 @@ PatchVpy(path) {
         return
     }
 
+    ; Fix single quote in inputPath string literal.
+    ; Flowframes writes:  inputPath = r'C:\path\It's a file.mp4'
+    ; A single quote inside the filename terminates the Python raw string early -> SyntaxError.
+    ; Fix: re-quote with double quotes. Double quotes are illegal in Windows filenames
+    ; so switching delimiter from ' to " is always safe.
+    ; Only applied when the inputPath line actually contains a single quote in the path itself.
+    ; Detection uses a repeated capture group (.+?'.+?)+ which matches any number
+    ; of embedded single quotes in the path, making it robust for filenames like
+    ; "It's a test.mp4", "John's friend's video.mp4", etc.
+    if RegExMatch(patched, "inputPath = r'(.+?'[^`n]+?)+'") {
+        patched := RegExReplace(patched, "inputPath = r'(.+)'", "inputPath = r`"$1`"")
+        Log("Fixed single quote(s) in inputPath")
+    }
+
     ; Write patched content back
     try {
         f := FileOpen(path, "w", "UTF-8")

@@ -1,8 +1,39 @@
 {
-  "OverrideH265EncodingEnable": "True",
-  "OverrideH265EncodingSettings": {
-    "OverrideEncodingArgs": "-c:v hevc_qsv -global_quality 17 -preset slow -async_depth 8 -g 60 -keyint_min 1 -forced_idr 1 -movflags +faststart",
-    "LogEnable": "True",
-    "DebugLogEnable": "False"
+  // ===========================================================================
+  // ffmpeg_wrapper_config.json  (JSONC - // and /* */ comments are allowed)
+  // Intercepts FlowFrames' ffmpeg call. Framerate: the stale FlowFrames input
+  // "-r N/1" is stripped (for pipe input, non-tmix) so ffmpeg honors vspipe's
+  // y4m header - source-agnostic, works for averaging, custom scripts and RIFE.
+  // ===========================================================================
+
+  "LogEnable": "True",
+  "DebugLogEnable": "False",
+
+  // Path to the sibling vspipe_wrapper_config.json, read ONLY to detect blend
+  // conflicts (below). "" = default relative ..\rife-ncnn-vs\vspipe_wrapper_config.json.
+  // Non-empty accepts: absolute / %EnvVar% / relative-to-wrapper.
+  // If tmixBlending.Enable=True and this config is missing/unreadable -> abort.
+  "VspipeConfigPath": "",
+
+  // Replace FlowFrames' libx265 with hardware HEVC. Used when tmixBlending is off.
+  "OverrideH265Encoding": {
+    "Enable": "True",
+    "PixelFormat": "yuv420p",          // p010le for 10-bit
+    "EncodingArgs": "-c:v hevc_qsv -global_quality 17 -preset veryslow -g 30 -keyint_min 1 -forced_idr 1 -movflags +faststart"
+  },
+  // Example command for hevc_nvenc codec: 
+  // "-c:v hevc_nvenc -preset p7 -rc constqp -qp 17 -b_ref_mode disabled -spatial-aq 1 -aq-strength 8 -g 30 -keyint_min 1 -forced_idr 1 -movflags +faststart"
+  //
+  // ffmpeg-side blend+downsample (tmix). Source fps auto-detected from the input
+  // -r (retained when tmix is active). Output rate set by the fps filter.
+  // CONFLICTS (abort with a dialog) when tmixBlending.Enable=True AND the vspipe
+  // config has AverageFrames.Enable=True (double-blend) or OverrideVspipeScript.Enable=True
+  // (custom script blend state unknown), or the vspipe config can't be read.
+  "tmixBlending": {
+    "Enable": "False",
+    "TargetFps": "60",
+    "BlendWeights": "1,1,1,1,1",
+    "PixelFormat": "nv12",
+    "EncodingArgs": "-c:v hevc_qsv -global_quality 17 -preset veryslow -g 30 -keyint_min 1 -forced_idr 1 -movflags +faststart"
   }
 }
